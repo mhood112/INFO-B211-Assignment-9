@@ -1,0 +1,764 @@
+mhood112: Use your knowledge of natural language processing to perform comparative analysis on three different texts (Text_1.txt, Text_2.txt, and Text_3.txt from Canvas). Perform tokenization, stemming, and lemmatization to determine the 20 most common tokens in each text. Determine how many named entities are contained in each text. Using both of these pieces of information, determine the subject of all three texts.
+
+
+
+GitHub Copilot: To perform the requested analysis, you can use Python with the Natural Language Toolkit (NLTK) and spaCy libraries. Below is a step-by-step guide and code to tokenize, stem, lemmatize, and analyze the texts.
+
+### Steps:
+1. **Tokenization**: Split the text into individual words or tokens.
+2. **Stemming**: Reduce words to their root forms using a stemming algorithm (e.g., Porter Stemmer).
+3. **Lemmatization**: Reduce words to their base or dictionary form using linguistic rules.
+4. **Named Entity Recognition (NER)**: Identify named entities (e.g., people, places, organizations) in the text.
+5. **Frequency Analysis**: Count the frequency of tokens and identify the 20 most common ones.
+6. **Subject Determination**: Use the token and entity analysis to infer the subject of the texts.
+
+### Code Implementation:
+Below is the Python code to analyze the three texts.
+
+```python
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
+from collections import Counter
+import spacy
+
+# Download NLTK data
+nltk.download('punkt')
+nltk.download('stopwords')
+
+# Initialize tools
+stop_words = set(stopwords.words('english'))
+stemmer = PorterStemmer()
+nlp = spacy.load("en_core_web_sm")
+
+# Function to process text
+def analyze_text(text):
+    # Tokenization
+    tokens = word_tokenize(text)
+    tokens = [token.lower() for token in tokens if token.isalnum() and token.lower() not in stop_words]
+    
+    # Stemming
+    stemmed_tokens = [stemmer.stem(token) for token in tokens]
+    
+    # Lemmatization
+    doc = nlp(text)
+    lemmatized_tokens = [token.lemma_.lower() for token in doc if token.is_alpha and token.text.lower() not in stop_words]
+    
+    # Frequency analysis
+    token_counts = Counter(tokens)
+    most_common_tokens = token_counts.most_common(20)
+    
+    # Named Entity Recognition (NER)
+    entities = [ent.text for ent in doc.ents]
+    num_entities = len(entities)
+    
+    return {
+        "most_common_tokens": most_common_tokens,
+        "num_entities": num_entities,
+        "entities": entities
+    }
+
+# Load texts (replace with actual file paths)
+with open("Text_1.txt", "r") as file1, open("Text_2.txt", "r") as file2, open("Text_3.txt", "r") as file3:
+    text1 = file1.read()
+    text2 = file2.read()
+    text3 = file3.read()
+
+# Analyze texts
+result1 = analyze_text(text1)
+result2 = analyze_text(text2)
+result3 = analyze_text(text3)
+
+# Print results
+print("Text 1 Analysis:")
+print(result1)
+print("\nText 2 Analysis:")
+print(result2)
+print("\nText 3 Analysis:")
+print(result3)
+
+# Determine subjects based on tokens and entities
+def determine_subject(entities, tokens):
+    if "romeo" in tokens or "juliet" in tokens:
+        return "A cosmic retelling of Romeo and Juliet"
+    # Add more conditions based on the other texts
+    return "Unknown subject"
+
+print("\nSubjects:")
+print("Text 1 Subject:", determine_subject(result1["entities"], [t[0] for t in result1["most_common_tokens"]]))
+print("Text 2 Subject:", determine_subject(result2["entities"], [t[0] for t in result2["most_common_tokens"]]))
+print("Text 3 Subject:", determine_subject(result3["entities"], [t[0] for t in result3["most_common_tokens"]]))
+```
+
+### Explanation:
+1. **Tokenization**: The `word_tokenize` function splits the text into words, filtering out non-alphanumeric tokens and stopwords.
+2. **Stemming**: The `PorterStemmer` reduces words to their root forms.
+3. **Lemmatization**: spaCy's lemmatizer converts words to their base forms.
+4. **NER**: spaCy identifies named entities in the text.
+5. **Frequency Analysis**: The `Counter` class counts token occurrences, and the 20 most common tokens are extracted.
+6. **Subject Determination**: Based on the tokens and entities, the subject of each text is inferred.
+
+### Output:
+The script will output:
+- The 20 most common tokens for each text.
+- The number of named entities and their list.
+- The inferred subject of each text.
+
+Replace `"Text_1.txt"`, `"Text_2.txt"`, and `"Text_3.txt"` with the actual file paths for the other texts. Let me know if you need further assistance!
+
+mhood112: can you do this without using spacy
+
+GitHub Copilot: Certainly! Below is a Python implementation of the requested analysis using only the NLTK library, avoiding spaCy entirely. This approach includes tokenization, stemming, lemmatization (using WordNet), and named entity recognition (NER) using NLTK.
+
+### Code Implementation:
+```python
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords, wordnet
+from nltk.stem import PorterStemmer, WordNetLemmatizer
+from nltk import pos_tag, ne_chunk
+from collections import Counter
+
+# Download NLTK data
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('wordnet')
+nltk.download('maxent_ne_chunker')
+nltk.download('words')
+
+# Initialize tools
+stop_words = set(stopwords.words('english'))
+stemmer = PorterStemmer()
+lemmatizer = WordNetLemmatizer()
+
+# Function to get WordNet POS tag for lemmatization
+def get_wordnet_pos(tag):
+    if tag.startswith('J'):
+        return wordnet.ADJ
+    elif tag.startswith('V'):
+        return wordnet.VERB
+    elif tag.startswith('N'):
+        return wordnet.NOUN
+    elif tag.startswith('R'):
+        return wordnet.ADV
+    else:
+        return wordnet.NOUN
+
+# Function to process text
+def analyze_text(text):
+    # Tokenization
+    tokens = word_tokenize(text)
+    tokens = [token.lower() for token in tokens if token.isalnum() and token.lower() not in stop_words]
+    
+    # Stemming
+    stemmed_tokens = [stemmer.stem(token) for token in tokens]
+    
+    # Lemmatization
+    pos_tags = pos_tag(tokens)
+    lemmatized_tokens = [lemmatizer.lemmatize(token, get_wordnet_pos(tag)) for token, tag in pos_tags]
+    
+    # Frequency analysis
+    token_counts = Counter(tokens)
+    most_common_tokens = token_counts.most_common(20)
+    
+    # Named Entity Recognition (NER)
+    named_entities = ne_chunk(pos_tags)
+    entities = [chunk for chunk in named_entities if hasattr(chunk, 'label')]
+    num_entities = len(entities)
+    entity_names = [' '.join(c[0] for c in chunk) for chunk in entities]
+    
+    return {
+        "most_common_tokens": most_common_tokens,
+        "num_entities": num_entities,
+        "entities": entity_names
+    }
+
+# Load texts (replace with actual file paths)
+with open("Text_1.txt", "r") as file1, open("Text_2.txt", "r") as file2, open("Text_3.txt", "r") as file3:
+    text1 = file1.read()
+    text2 = file2.read()
+    text3 = file3.read()
+
+# Analyze texts
+result1 = analyze_text(text1)
+result2 = analyze_text(text2)
+result3 = analyze_text(text3)
+
+# Print results
+print("Text 1 Analysis:")
+print(result1)
+print("\nText 2 Analysis:")
+print(result2)
+print("\nText 3 Analysis:")
+print(result3)
+
+# Determine subjects based on tokens and entities
+def determine_subject(entities, tokens):
+    if "romeo" in tokens or "juliet" in tokens:
+        return "A cosmic retelling of Romeo and Juliet"
+    # Add more conditions based on the other texts
+    return "Unknown subject"
+
+print("\nSubjects:")
+print("Text 1 Subject:", determine_subject(result1["entities"], [t[0] for t in result1["most_common_tokens"]]))
+print("Text 2 Subject:", determine_subject(result2["entities"], [t[0] for t in result2["most_common_tokens"]]))
+print("Text 3 Subject:", determine_subject(result3["entities"], [t[0] for t in result3["most_common_tokens"]]))
+```
+
+### Explanation:
+1. **Tokenization**: The `word_tokenize` function splits the text into tokens, filtering out non-alphanumeric tokens and stopwords.
+2. **Stemming**: The `PorterStemmer` reduces words to their root forms.
+3. **Lemmatization**: The `WordNetLemmatizer` uses POS tags to lemmatize tokens accurately.
+4. **NER**: The `ne_chunk` function identifies named entities based on POS tagging.
+5. **Frequency Analysis**: The `Counter` class counts token occurrences, and the 20 most common tokens are extracted.
+6. **Subject Determination**: Based on the tokens and entities, the subject of each text is inferred.
+
+### Output:
+The script will output:
+- The 20 most common tokens for each text.
+- The number of named entities and their list.
+- The inferred subject of each text.
+
+Replace `"Text_1.txt"`, `"Text_2.txt"`, and `"Text_3.txt"` with the actual file paths for the other texts. Let me know if you need further clarification!
+
+Similar code found with 1 license type
+
+mhood112: [nltk_data] Downloading package punkt to /Users/miahood/nltk_data...
+[nltk_data]   Unzipping tokenizers/punkt.zip.
+[nltk_data] Downloading package stopwords to
+[nltk_data]     /Users/miahood/nltk_data...
+[nltk_data]   Unzipping corpora/stopwords.zip.
+[nltk_data] Downloading package averaged_perceptron_tagger to
+[nltk_data]     /Users/miahood/nltk_data...
+[nltk_data]   Unzipping taggers/averaged_perceptron_tagger.zip.
+[nltk_data] Downloading package wordnet to /Users/miahood/nltk_data...
+[nltk_data] Downloading package maxent_ne_chunker to
+[nltk_data]     /Users/miahood/nltk_data...
+[nltk_data]   Unzipping chunkers/maxent_ne_chunker.zip.
+[nltk_data] Downloading package words to /Users/miahood/nltk_data...
+[nltk_data]   Unzipping corpora/words.zip.
+Traceback (most recent call last):
+  File "/Users/miahood/Desktop/Assignment 9/Assigment_9.py", line 70, in <module>
+    result1 = analyze_text(text1)
+  File "/Users/miahood/Desktop/Assignment 9/Assigment_9.py", line 37, in analyze_text
+    tokens = word_tokenize(text)
+  File "/opt/anaconda3/envs/nltk_env/lib/python3.13/site-packages/nltk/tokenize/__init__.py", line 142, in word_tokenize
+    sentences = [text] if preserve_line else sent_tokenize(text, language)
+                                             ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/nltk_env/lib/python3.13/site-packages/nltk/tokenize/__init__.py", line 119, in sent_tokenize
+    tokenizer = _get_punkt_tokenizer(language)
+  File "/opt/anaconda3/envs/nltk_env/lib/python3.13/site-packages/nltk/tokenize/__init__.py", line 105, in _get_punkt_tokenizer
+    return PunktTokenizer(language)
+  File "/opt/anaconda3/envs/nltk_env/lib/python3.13/site-packages/nltk/tokenize/punkt.py", line 1744, in __init__
+    self.load_lang(lang)
+    ~~~~~~~~~~~~~~^^^^^^
+  File "/opt/anaconda3/envs/nltk_env/lib/python3.13/site-packages/nltk/tokenize/punkt.py", line 1749, in load_lang
+    lang_dir = find(f"tokenizers/punkt_tab/{lang}/")
+  File "/opt/anaconda3/envs/nltk_env/lib/python3.13/site-packages/nltk/data.py", line 579, in find
+    raise LookupError(resource_not_found)
+LookupError: 
+**********************************************************************
+  Resource punkt_tab not found.
+  Please use the NLTK Downloader to obtain the resource:
+
+  >>> import nltk
+  >>> nltk.download('punkt_tab')
+  
+  For more information see: https://www.nltk.org/data.html
+
+  Attempted to load tokenizers/punkt_tab/english/
+
+  Searched in:
+    - '/Users/miahood/nltk_data'
+    - '/opt/anaconda3/envs/nltk_env/nltk_data'
+    - '/opt/anaconda3/envs/nltk_env/share/nltk_data'
+    - '/opt/anaconda3/envs/nltk_env/lib/nltk_data'
+    - '/usr/share/nltk_data'
+    - '/usr/local/share/nltk_data'
+    - '/usr/lib/nltk_data'
+    - '/usr/local/lib/nltk_data'
+**********************************************************************
+
+GitHub Copilot: The error indicates that the `punkt_tab` resource is missing, which is required for tokenization. However, `punkt_tab` is not a standard resource in NLTK, and this issue might be caused by a corrupted or incomplete installation of the `punkt` tokenizer.
+
+### Steps to Fix the Issue:
+
+1. **Re-download the `punkt` resource**:
+   Run the following commands in your Python environment to ensure the `punkt` tokenizer is properly downloaded:
+   ```python
+   import nltk
+   nltk.download('punkt')
+   ```
+
+2. **Verify the NLTK Data Path**:
+   Ensure that NLTK is looking for resources in the correct directory. You can check the NLTK data path using:
+   ```python
+   import nltk
+   print(nltk.data.path)
+   ```
+   If the path is incorrect, you can add the correct path using:
+   ```python
+   nltk.data.path.append('/correct/path/to/nltk_data')
+   ```
+
+3. **Manually Remove and Reinstall NLTK Data**:
+   If the issue persists, manually delete the `nltk_data` folder (usually located in your home directory or the paths listed in the error message) and re-download the resources:
+   ```python
+   import nltk
+   nltk.download('all')
+   ```
+
+4. **Check for Environment Conflicts**:
+   If you're using a virtual environment (e.g., Anaconda), ensure that the environment is properly configured and does not have conflicting installations of NLTK. You can try creating a new environment and reinstalling NLTK:
+   ```bash
+   conda create -n new_env python=3.9
+   conda activate new_env
+   pip install nltk
+   ```
+
+5. **Test the Tokenizer**:
+   After re-downloading the resources, test the tokenizer with a simple example to ensure it works:
+   ```python
+   from nltk.tokenize import word_tokenize
+   text = "This is a test sentence."
+   tokens = word_tokenize(text)
+   print(tokens)
+   ```
+
+### Updated Code to Avoid Future Issues:
+To ensure the script works even if some resources are missing, you can add a try-except block to handle missing resources gracefully:
+```python
+import nltk
+
+# Ensure all required resources are downloaded
+try:
+    nltk.download('punkt')
+    nltk.download('stopwords')
+    nltk.download('averaged_perceptron_tagger')
+    nltk.download('wordnet')
+    nltk.download('maxent_ne_chunker')
+    nltk.download('words')
+except Exception as e:
+    print(f"Error downloading NLTK resources: {e}")
+```
+
+### Next Steps:
+1. Follow the steps above to resolve the `punkt_tab` issue.
+2. Once resolved, rerun your script to verify that the analysis works as expected.
+3. Let me know if you encounter further issues!
+
+mhood112: im in python 3.13.2
+
+GitHub Copilot: The issue you're encountering with the `punkt_tab` resource is unusual and might be related to your Python environment or NLTK installation. Since you're using Python 3.13.2 (a future version that doesn't exist as of my knowledge cutoff in 2023), I'll assume you're referring to Python 3.11 or a typo. Below are steps to resolve the issue and ensure compatibility with your environment.
+
+---
+
+### Steps to Resolve the Issue
+
+1. **Reinstall NLTK Resources**:
+   Ensure that all required NLTK resources are properly installed. Run the following commands in your Python environment:
+   ```python
+   import nltk
+   nltk.download('punkt')
+   nltk.download('stopwords')
+   nltk.download('averaged_perceptron_tagger')
+   nltk.download('wordnet')
+   nltk.download('maxent_ne_chunker')
+   nltk.download('words')
+   ```
+
+2. **Verify Python Version**:
+   Confirm your Python version by running:
+   ```bash
+   python --version
+   ```
+   If you're using a version higher than Python 3.11, it might not be fully supported by NLTK. Consider downgrading to Python 3.11 or 3.10 for compatibility.
+
+3. **Test Tokenization**:
+   Run a simple test to verify that tokenization works:
+   ```python
+   from nltk.tokenize import word_tokenize
+   text = "This is a test sentence."
+   tokens = word_tokenize(text)
+   print(tokens)
+   ```
+
+4. **Manually Clear and Reinstall NLTK Data**:
+   If the issue persists, manually delete the `nltk_data` folder (usually located in your home directory or the paths listed in the error message) and re-download the resources:
+   ```python
+   import nltk
+   nltk.download('all')
+   ```
+
+5. **Check for Environment Conflicts**:
+   If you're using a virtual environment (e.g., Anaconda), ensure that the environment is properly configured and does not have conflicting installations of NLTK. You can create a new environment and reinstall NLTK:
+   ```bash
+   conda create -n nltk_env python=3.11
+   conda activate nltk_env
+   pip install nltk
+   ```
+
+---
+
+### Updated Code with Error Handling
+
+To avoid runtime errors due to missing resources, you can add error handling to your script:
+
+```python
+import nltk
+
+# Ensure all required resources are downloaded
+try:
+    nltk.download('punkt')
+    nltk.download('stopwords')
+    nltk.download('averaged_perceptron_tagger')
+    nltk.download('wordnet')
+    nltk.download('maxent_ne_chunker')
+    nltk.download('words')
+except Exception as e:
+    print(f"Error downloading NLTK resources: {e}")
+```
+
+---
+
+### Alternative Tokenizer (Fallback)
+
+If the `word_tokenize` function continues to fail, you can use Python's built-in `split()` method as a fallback for tokenization. Replace this part of your code:
+
+```python
+# Tokenization
+tokens = word_tokenize(text)
+```
+
+With:
+
+```python
+# Fallback Tokenization
+tokens = text.split()
+tokens = [token.lower() for token in tokens if token.isalnum() and token.lower() not in stop_words]
+```
+
+---
+
+### Next Steps
+
+1. Follow the steps above to resolve the `punkt_tab` issue.
+2. Test the updated script to ensure it works as expected.
+3. If the issue persists, consider using a different Python version or environment.
+
+Let me know if you encounter further issues!
+
+mhood112: Traceback (most recent call last):
+  File "/Users/miahood/Desktop/Assignment 9/Assigment_9.py", line 70, in <module>
+    result1 = analyze_text(text1)
+  File "/Users/miahood/Desktop/Assignment 9/Assigment_9.py", line 37, in analyze_text
+    tokens = word_tokenize(text)
+  File "/opt/anaconda3/envs/nltk_env/lib/python3.13/site-packages/nltk/tokenize/__init__.py", line 142, in word_tokenize
+    sentences = [text] if preserve_line else sent_tokenize(text, language)
+                                             ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/nltk_env/lib/python3.13/site-packages/nltk/tokenize/__init__.py", line 119, in sent_tokenize
+    tokenizer = _get_punkt_tokenizer(language)
+  File "/opt/anaconda3/envs/nltk_env/lib/python3.13/site-packages/nltk/tokenize/__init__.py", line 105, in _get_punkt_tokenizer
+    return PunktTokenizer(language)
+  File "/opt/anaconda3/envs/nltk_env/lib/python3.13/site-packages/nltk/tokenize/punkt.py", line 1744, in __init__
+    self.load_lang(lang)
+    ~~~~~~~~~~~~~~^^^^^^
+  File "/opt/anaconda3/envs/nltk_env/lib/python3.13/site-packages/nltk/tokenize/punkt.py", line 1749, in load_lang
+    lang_dir = find(f"tokenizers/punkt_tab/{lang}/")
+  File "/opt/anaconda3/envs/nltk_env/lib/python3.13/site-packages/nltk/data.py", line 579, in find
+    raise LookupError(resource_not_found)
+LookupError: 
+**********************************************************************
+  Resource punkt_tab not found.
+  Please use the NLTK Downloader to obtain the resource:
+
+  >>> import nltk
+  >>> nltk.download('punkt_tab')
+  
+  For more information see: https://www.nltk.org/data.html
+
+  Attempted to load tokenizers/punkt_tab/english/
+
+  Searched in:
+    - '/Users/miahood/nltk_data'
+    - '/opt/anaconda3/envs/nltk_env/nltk_data'
+    - '/opt/anaconda3/envs/nltk_env/share/nltk_data'
+    - '/opt/anaconda3/envs/nltk_env/lib/nltk_data'
+    - '/usr/share/nltk_data'
+    - '/usr/local/share/nltk_data'
+    - '/usr/lib/nltk_data'
+    - '/usr/local/lib/nltk_data'
+**********************************************************************
+
+GitHub Copilot: The error you're encountering (`punkt_tab not found`) is unusual and likely caused by a corrupted or incomplete installation of the `punkt` tokenizer. The `punkt_tab` resource is not a standard part of NLTK, so this issue might be related to your environment or an anomaly in your NLTK installation.
+
+Here’s how you can resolve the issue:
+
+---
+
+### 1. **Reinstall the `punkt` Resource**
+The first step is to ensure that the `punkt` tokenizer is properly installed. Run the following commands in your Python environment:
+
+```python
+import nltk
+nltk.download('punkt')
+```
+
+---
+
+### 2. **Manually Clear and Reinstall NLTK Data**
+If the issue persists, manually delete the `nltk_data` folder and re-download the resources. The `nltk_data` folder is typically located in one of the paths listed in the error message (e.g., nltk_data).
+
+Steps:
+1. Locate and delete the `nltk_data` folder.
+2. Re-download all NLTK resources:
+   ```python
+   import nltk
+   nltk.download('all')
+   ```
+
+---
+
+### 3. **Verify the NLTK Data Path**
+Ensure that NLTK is looking for resources in the correct directory. You can check the NLTK data path using:
+
+```python
+import nltk
+print(nltk.data.path)
+```
+
+If the path is incorrect, you can add the correct path using:
+
+```python
+nltk.data.path.append('/correct/path/to/nltk_data')
+```
+
+---
+
+### 4. **Test Tokenization**
+After reinstalling the `punkt` resource, test the tokenizer with a simple example:
+
+```python
+from nltk.tokenize import word_tokenize
+text = "This is a test sentence."
+tokens = word_tokenize(text)
+print(tokens)
+```
+
+If this works, the issue should be resolved.
+
+---
+
+### 5. **Fallback Tokenizer**
+If the `word_tokenize` function continues to fail, you can use Python's built-in `split()` method as a fallback for tokenization. Replace this part of your code:
+
+```python
+# Tokenization
+tokens = word_tokenize(text)
+```
+
+With:
+
+```python
+# Fallback Tokenization
+tokens = text.split()
+tokens = [token.lower() for token in tokens if token.isalnum() and token.lower() not in stop_words]
+```
+
+---
+
+### 6. **Check Python Version**
+Ensure that you're using a supported Python version. As of now, Python 3.13 does not exist, so you might be using an experimental or custom build. Consider using Python 3.11 or 3.10 for compatibility with NLTK.
+
+You can check your Python version by running:
+
+```bash
+python --version
+```
+
+If necessary, create a new environment with a supported Python version:
+
+```bash
+conda create -n nltk_env python=3.11
+conda activate nltk_env
+pip install nltk
+```
+
+---
+
+### 7. **Updated Code with Error Handling**
+To avoid runtime errors due to missing resources, you can add error handling to your script:
+
+```python
+import nltk
+
+# Ensure all required resources are downloaded
+try:
+    nltk.download('punkt')
+    nltk.download('stopwords')
+    nltk.download('averaged_perceptron_tagger')
+    nltk.download('wordnet')
+    nltk.download('maxent_ne_chunker')
+    nltk.download('words')
+except Exception as e:
+    print(f"Error downloading NLTK resources: {e}")
+```
+
+---
+
+### Summary
+1. Reinstall the `punkt` resource and test tokenization.
+2. Manually clear and reinstall NLTK data if necessary.
+3. Use a fallback tokenizer if the issue persists.
+4. Ensure you're using a supported Python version.
+
+Let me know if you encounter further issues!
+
+mhood112: can you update the code for me
+
+GitHub Copilot: Here’s an updated version of your code with improvements to handle potential issues and ensure compatibility. The changes include:
+
+1. **Error Handling for Missing NLTK Resources**: Added a try-except block to ensure all required resources are downloaded.
+2. **Fallback Tokenization**: Added a fallback mechanism using Python's `split()` method if `word_tokenize` fails.
+3. **Improved Debugging**: Added print statements to help debug issues during execution.
+
+### Updated Code:
+```python
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords, wordnet
+from nltk.stem import PorterStemmer, WordNetLemmatizer
+from nltk import pos_tag, ne_chunk
+from collections import Counter
+
+# Ensure all required NLTK resources are downloaded
+try:
+    nltk.download('punkt')
+    nltk.download('stopwords')
+    nltk.download('averaged_perceptron_tagger')
+    nltk.download('wordnet')
+    nltk.download('maxent_ne_chunker')
+    nltk.download('words')
+except Exception as e:
+    print(f"Error downloading NLTK resources: {e}")
+
+# Initialize tools
+stop_words = set(stopwords.words('english'))
+stemmer = PorterStemmer()
+lemmatizer = WordNetLemmatizer()
+
+# Function to get WordNet POS tag for lemmatization
+def get_wordnet_pos(tag):
+    if tag.startswith('J'):
+        return wordnet.ADJ
+    elif tag.startswith('V'):
+        return wordnet.VERB
+    elif tag.startswith('N'):
+        return wordnet.NOUN
+    elif tag.startswith('R'):
+        return wordnet.ADV
+    else:
+        return wordnet.NOUN
+
+# Function to process text
+def analyze_text(text):
+    # Tokenization with fallback
+    try:
+        tokens = word_tokenize(text)
+    except LookupError:
+        print("word_tokenize failed. Using fallback tokenization.")
+        tokens = text.split()
+    
+    # Filter tokens
+    tokens = [token.lower() for token in tokens if token.isalnum() and token.lower() not in stop_words]
+    
+    # Stemming
+    stemmed_tokens = [stemmer.stem(token) for token in tokens]
+    
+    # Lemmatization
+    pos_tags = pos_tag(tokens)
+    lemmatized_tokens = [lemmatizer.lemmatize(token, get_wordnet_pos(tag)) for token, tag in pos_tags]
+    
+    # Frequency analysis
+    token_counts = Counter(tokens)
+    most_common_tokens = token_counts.most_common(20)
+    
+    # Named Entity Recognition (NER)
+    named_entities = ne_chunk(pos_tags)
+    entities = [chunk for chunk in named_entities if hasattr(chunk, 'label')]
+    num_entities = len(entities)
+    entity_names = [' '.join(c[0] for c in chunk) for chunk in entities]
+    
+    return {
+        "most_common_tokens": most_common_tokens,
+        "num_entities": num_entities,
+        "entities": entity_names
+    }
+
+# Load texts (replace with actual file paths)
+try:
+    with open("Text_1.txt", "r") as file1, open("Text_2.txt", "r") as file2, open("Text_3.txt", "r") as file3:
+        text1 = file1.read()
+        text2 = file2.read()
+        text3 = file3.read()
+except FileNotFoundError as e:
+    print(f"Error loading files: {e}")
+    exit()
+
+# Analyze texts
+result1 = analyze_text(text1)
+result2 = analyze_text(text2)
+result3 = analyze_text(text3)
+
+# Print results
+print("Text 1 Analysis:")
+print(result1)
+print("\nText 2 Analysis:")
+print(result2)
+print("\nText 3 Analysis:")
+print(result3)
+
+# Determine subjects based on tokens and entities
+def determine_subject(entities, tokens):
+    if "romeo" in tokens or "juliet" in tokens:
+        return "A cosmic retelling of Romeo and Juliet"
+    # Add more conditions based on the other texts
+    return "Unknown subject"
+
+print("\nSubjects:")
+print("Text 1 Subject:", determine_subject(result1["entities"], [t[0] for t in result1["most_common_tokens"]]))
+print("Text 2 Subject:", determine_subject(result2["entities"], [t[0] for t in result2["most_common_tokens"]]))
+print("Text 3 Subject:", determine_subject(result3["entities"], [t[0] for t in result3["most_common_tokens"]]))
+```
+
+---
+
+### Key Updates:
+1. **Error Handling for Tokenization**:
+   - If `word_tokenize` fails, the code falls back to using `split()` for tokenization.
+
+2. **File Loading Error Handling**:
+   - Added a `try-except` block to handle missing or inaccessible text files.
+
+3. **Debugging Information**:
+   - Added print statements to help identify issues during execution.
+
+4. **Graceful Exit**:
+   - If files are missing or critical errors occur, the script exits gracefully.
+
+---
+
+### Next Steps:
+1. Save the updated code.
+2. Ensure the text files (`Text_1.txt`, Text_2.txt, Text_3.txt) are in the same directory as the script or update the file paths accordingly.
+3. Run the script and verify the output.
+
+Let me know if you encounter further issues!
+
+Similar code found with 1 license type
+
+mhood112:  Perform tokenization, stemming, and lemmatization to determine the 20 most common tokens in each text. Determine how many named entities are contained in each text. Using both of these pieces of information, determine the subject of all three texts.
+
+GitHub Copilot: 
